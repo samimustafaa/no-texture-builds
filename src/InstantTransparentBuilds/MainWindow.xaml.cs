@@ -143,7 +143,7 @@ public partial class MainWindow : Window
                 UseShellExecute = true,
                 ArgumentList = { Process.GetCurrentProcess().Id.ToString(), installedApp, stagedApp }
             });
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         }
         catch (Exception ex) { StatusLabel.Text = "Update failed: " + ex.Message; }
         finally { if (sender is Button button) button.IsEnabled = true; }
