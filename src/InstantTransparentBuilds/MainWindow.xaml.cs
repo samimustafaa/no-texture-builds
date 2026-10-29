@@ -146,6 +146,6 @@ public partial class MainWindow : Window
             System.Windows.Application.Current.Shutdown();
         }
         catch (Exception ex) { StatusLabel.Text = "Update failed: " + ex.Message; }
-        finally { if (sender is Button updateButton) updateButton.IsEnabled = true; }
+        finally { if (sender is Button) ((Button)sender).IsEnabled = true; }
     }
 }
