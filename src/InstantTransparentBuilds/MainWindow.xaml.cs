@@ -101,8 +101,13 @@ public partial class MainWindow : Window
             { StatusLabel.Text = "Already up to date (v" + AppVersion.ToString(3) + ")."; return; }
 
             var assets = root.GetProperty("assets").EnumerateArray().ToArray();
-            string? GetUrl(string name) => assets.FirstOrDefault(a => a.GetProperty("name").GetString() == name)
-                .TryGetProperty("browser_download_url", out var url) ? url.GetString() : null;
+            string? GetUrl(string name)
+            {
+                foreach (var asset in assets)
+                    if (asset.GetProperty("name").GetString() == name)
+                        return asset.GetProperty("browser_download_url").GetString();
+                return null;
+            }
             var zipUrl = GetUrl("InstantTransparentBuilds-win-x64.zip");
             var checksumUrl = GetUrl("InstantTransparentBuilds-win-x64.zip.sha256");
             if (zipUrl == null || checksumUrl == null)
