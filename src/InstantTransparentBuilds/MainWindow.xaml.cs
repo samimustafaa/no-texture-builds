@@ -11,7 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Win32;
-using Forms = System.Windows.Forms;
+
 
 namespace InstantTransparentBuilds;
 public partial class MainWindow : Window
@@ -45,8 +45,8 @@ public partial class MainWindow : Window
     }
     private void ChooseFolder_Click(object sender, RoutedEventArgs e)
     {
-        using var dialog = new Forms.FolderBrowserDialog { Description = "Select the CD Revive folder" };
-        if (dialog.ShowDialog() == Forms.DialogResult.OK) { gameFolder = dialog.SelectedPath; GamePathLabel.Text = gameFolder; StatusLabel.Text = "Game folder selected (read-only)."; }
+        var dialog = new OpenFolderDialog { Title = "Select the CD Revive folder", Multiselect = false };
+        if (dialog.ShowDialog() == true) { gameFolder = dialog.FolderName; GamePathLabel.Text = gameFolder; StatusLabel.Text = "Game folder selected (read-only)."; }
     }
     private void OpenFolder_Click(object sender, RoutedEventArgs e)
     {
@@ -82,7 +82,7 @@ public partial class MainWindow : Window
     }
     private async void Update_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button) button.IsEnabled = false;
+        if (sender is Button updateButton) updateButton.IsEnabled = false;
         StatusLabel.Text = "Checking official GitHub Releases...";
         try
         {
@@ -146,6 +146,6 @@ public partial class MainWindow : Window
             System.Windows.Application.Current.Shutdown();
         }
         catch (Exception ex) { StatusLabel.Text = "Update failed: " + ex.Message; }
-        finally { if (sender is Button button) button.IsEnabled = true; }
+        finally { if (sender is Button updateButton) updateButton.IsEnabled = true; }
     }
 }
