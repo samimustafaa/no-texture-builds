@@ -13,7 +13,7 @@
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid Grid.Row="0" Margin="0,0,0,25">
    <StackPanel>
-    <TextBlock Text="INSTANT TRANSPARENT BUILDS" Foreground="#7B9CFF" FontSize="12" FontWeight="Bold" LetterSpacing="2"/>
+    <TextBlock Text="INSTANT TRANSPARENT BUILDS" Foreground="#7B9CFF" FontSize="12" FontWeight="Bold"/>
     <TextBlock Text="Build appearance studio." FontSize="34" FontWeight="Bold" Margin="0,8,0,4"/>
     <TextBlock Text="CD Revive companion · preview-only · no game modifications" Foreground="#9AA4BC" FontSize="14"/>
    </StackPanel>
