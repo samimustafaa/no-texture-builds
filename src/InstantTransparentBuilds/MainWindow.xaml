@@ -6,16 +6,16 @@
  Background="#0B0D12" Foreground="#F1F3FA" FontFamily="Segoe UI">
  <Window.Resources>
   <Style TargetType="Button"><Setter Property="Background" Value="#242A39"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderBrush" Value="#343B50"/><Setter Property="Padding" Value="16,11"/><Setter Property="Margin" Value="0,0,10,10"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
-  <Style TargetType="Border" x:Key="Card"><Setter Property="Background" Value="#161A25"/><Setter Property="CornerRadius" Value="14"/><Setter Property="Padding" Value="18"/></Style>
+  <Style TargetType="Border" x:Key="Card"><Setter Property="Background" Value="#161A25"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="18"/></Style>
   <Style TargetType="TextBlock" x:Key="Muted"><Setter Property="Foreground" Value="#98A2BC"/></Style>
  </Window.Resources>
- <Grid Margin="30">
+ <Grid Margin="24">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <Grid Grid.Row="0" Margin="0,0,0,25">
    <StackPanel>
     <TextBlock Text="INSTANT TRANSPARENT BUILDS" Foreground="#7B9CFF" FontSize="12" FontWeight="Bold"/>
-    <TextBlock Text="Build appearance studio." FontSize="34" FontWeight="Bold" Margin="0,8,0,4"/>
-    <TextBlock Text="CD Revive companion · preview-only · no game modifications" Foreground="#9AA4BC" FontSize="14"/>
+    <TextBlock Text="Build Preview Studio" FontSize="28" FontWeight="Bold" Margin="0,8,0,4"/>
+    <TextBlock Text="Transparent build previews  ·  CD Revive companion" Foreground="#9AA4BC" FontSize="14"/>
    </StackPanel>
   </Grid>
   <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,18">
@@ -63,7 +63,7 @@
      <Button Content="Back up selected file" Click="Backup_Click"/>
      <Button Content="Restore from backup" Click="Restore_Click"/>
      <Button Content="Check for app updates" Click="Update_Click"/>
-     <TextBlock x:Name="StatusLabel" Text="Ready · v0.1.0" Foreground="#8FE8C5" TextWrapping="Wrap" Margin="0,13,0,0"/>
+     <TextBlock x:Name="StatusLabel" Text="Ready · v0.3.0" Foreground="#8FE8C5" TextWrapping="Wrap" Margin="0,13,0,0"/>
     </StackPanel>
    </Border>
   </Grid>
