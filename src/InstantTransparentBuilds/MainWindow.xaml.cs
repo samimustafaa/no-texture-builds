@@ -1,6 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Reflection;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -18,7 +21,8 @@ public partial class MainWindow : Window
     private readonly string backupDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "sg0hann", "InstantTransparentBuilds", "Backups");
     private int currentLevel;
     private string? gameFolder;
-    private static readonly HttpClient client = new() { Timeout = TimeSpan.FromSeconds(12) };
+    private static readonly HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) };
+    private static readonly Version AppVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 2, 0);
 
     public MainWindow() { InitializeComponent(); RefreshPreview(); }
     private void Level_Click(object sender, RoutedEventArgs e)
@@ -78,27 +82,65 @@ public partial class MainWindow : Window
     }
     private async void Update_Click(object sender, RoutedEventArgs e)
     {
-        StatusLabel.Text = "Checking GitHub Releases...";
+        if (sender is Button button) button.IsEnabled = false;
+        StatusLabel.Text = "Checking official GitHub Releases...";
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/samimustafaa/no-texture-builds/releases/latest");
-            request.Headers.UserAgent.ParseAdd("InstantTransparentBuilds/0.1.0");
+            request.Headers.UserAgent.ParseAdd("InstantTransparentBuilds/0.2");
             using var response = await client.SendAsync(request);
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound) { StatusLabel.Text = "No published release yet."; return; }
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            { StatusLabel.Text = "No published release yet. Download builds from GitHub Actions."; return; }
             response.EnsureSuccessStatusCode();
             using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            string tag = doc.RootElement.GetProperty("tag_name").GetString() ?? "";
-            string page = doc.RootElement.GetProperty("html_url").GetString() ?? "https://github.com/samimustafaa/no-texture-builds/releases";
-            if (!Version.TryParse(tag.TrimStart('v', 'V'), out var latest)) { StatusLabel.Text = "Latest release: " + tag; return; }
-            var current = new Version(0, 1, 0);
-            if (latest > current)
+            var root = doc.RootElement;
+            string tag = root.GetProperty("tag_name").GetString() ?? "";
+            if (!Version.TryParse(tag.TrimStart('v', 'V'), out var latest))
+            { StatusLabel.Text = "Release version could not be parsed."; return; }
+            if (latest <= AppVersion)
+            { StatusLabel.Text = "Already up to date (v" + AppVersion.ToString(3) + ")."; return; }
+
+            var assets = root.GetProperty("assets").EnumerateArray().ToArray();
+            string? GetUrl(string name) => assets.FirstOrDefault(a => a.GetProperty("name").GetString() == name)
+                .TryGetProperty("browser_download_url", out var url) ? url.GetString() : null;
+            var zipUrl = GetUrl("InstantTransparentBuilds-win-x64.zip");
+            var checksumUrl = GetUrl("InstantTransparentBuilds-win-x64.zip.sha256");
+            if (zipUrl == null || checksumUrl == null)
+            { StatusLabel.Text = "Update package/checksum missing from release."; return; }
+            if (MessageBox.Show("Install official update " + tag + " now?\nThe application will restart after updating.",
+                "Install update", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            { StatusLabel.Text = "Update skipped."; return; }
+
+            var stageDir = Path.Combine(Path.GetTempPath(), "ITB-update-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(stageDir);
+            var zipPath = Path.Combine(stageDir, "package.zip");
+            StatusLabel.Text = "Downloading update...";
+            using (var source = await client.GetStreamAsync(zipUrl))
+            using (var dest = File.Create(zipPath)) await source.CopyToAsync(dest);
+            var checksum = (await client.GetStringAsync(checksumUrl)).Split(' ', '\n', '\r', '\t')
+                .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s))?.Trim() ?? "";
+            var actual = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(zipPath)));
+            if (!string.Equals(actual, checksum, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Update checksum verification failed.");
+
+            using var zip = ZipFile.OpenRead(zipPath);
+            var appEntry = zip.Entries.SingleOrDefault(x => x.FullName == "InstantTransparentBuilds.exe");
+            var helperEntry = zip.Entries.SingleOrDefault(x => x.FullName == "InstantTransparentBuilds.Updater.exe");
+            if (appEntry == null || helperEntry == null) throw new InvalidDataException("Release archive lacks executable files.");
+            var stagedApp = Path.Combine(stageDir, "InstantTransparentBuilds.exe");
+            var stagedUpdater = Path.Combine(stageDir, "InstantTransparentBuilds.Updater.exe");
+            appEntry.ExtractToFile(stagedApp);
+            helperEntry.ExtractToFile(stagedUpdater);
+            var installedApp = Environment.ProcessPath ?? throw new InvalidOperationException("Cannot locate current application.");
+            StatusLabel.Text = "Installing update and restarting...";
+            Process.Start(new ProcessStartInfo(stagedUpdater)
             {
-                StatusLabel.Text = "Update available: " + tag;
-                if (MessageBox.Show("A newer version " + tag + " is available. Open the official GitHub release to download it?", "Update available", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                    Process.Start(new ProcessStartInfo(page) { UseShellExecute = true });
-            }
-            else StatusLabel.Text = "You're up to date (v0.1.0).";
+                UseShellExecute = true,
+                ArgumentList = { Process.GetCurrentProcess().Id.ToString(), installedApp, stagedApp }
+            });
+            Application.Current.Shutdown();
         }
-        catch (Exception ex) { StatusLabel.Text = "Update check failed: " + ex.Message; }
+        catch (Exception ex) { StatusLabel.Text = "Update failed: " + ex.Message; }
+        finally { if (sender is Button button) button.IsEnabled = true; }
     }
 }
